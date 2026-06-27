@@ -7,6 +7,22 @@ an external auto-patcher, one derivation per `<package>` `<version>`.
 Packages are named `<pkg>_<major>_<minor>` (e.g. `foo_1_2`) and live in a flat
 namespace. Consumers reach them as `nur.repos.auto-patcher.<pkg>_<major>_<minor>`.
 
+## Binary cache
+
+Build results are pushed to the public [Cachix](https://app.cachix.org/cache/auto-patcher)
+cache `auto-patcher` by CI, so consumers fetch binaries instead of rebuilding
+from source (NUR is evaluated by the community infra but not built by Hydra).
+Add it as a substituter:
+
+```nix
+nix.settings = {
+  substituters = [ "https://auto-patcher.cachix.org" ];
+  trusted-public-keys = [ "auto-patcher.cachix.org-1:<public-key-from-app.cachix.org>" ];
+};
+```
+
+or ad hoc: `cachix use auto-patcher`. The public key is shown on the cache page.
+
 ## Consuming
 
 ### Via the NUR overlay

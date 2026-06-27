@@ -19,6 +19,16 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
+      # Configure the public `auto-patcher` Cachix cache. With CACHIX_AUTH_TOKEN
+      # set (repo Actions secret) every path built below is pushed to the cache
+      # so consumers fetch binaries instead of rebuilding from source. Without
+      # the token it still works as a pull substituter and simply skips pushing,
+      # so CI stays green on forks / before the secret is added.
+      - uses: cachix/cachix-action@v15
+        with:
+          name: auto-patcher
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
       # Evaluate the flake outputs (packages, overlay, legacyPackages).
       - name: nix flake check
         run: nix flake check --show-trace
