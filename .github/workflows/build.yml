@@ -13,6 +13,9 @@ jobs:
 
       - uses: cachix/install-nix-action@v27
         with:
+          # Populate <nixpkgs> so the classic `nix-build default.nix` path
+          # (how the NUR infra evaluates) resolves without a flake.
+          nix_path: nixpkgs=channel:nixpkgs-unstable
           extra_nix_config: |
             experimental-features = nix-command flakes
 
