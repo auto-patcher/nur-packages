@@ -11,6 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Offline regression tests for the deterministic generator (no nix needed).
+      - name: generator tests
+        run: python3 tools/test_nur_update.py
+
       - uses: cachix/install-nix-action@v27
         with:
           # Populate <nixpkgs> so the classic `nix-build default.nix` path

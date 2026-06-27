@@ -82,6 +82,59 @@ Every package sets `meta` (description + license, optionally platforms) so it is
 indexed by NUR search. Packages that cannot build are kept with
 `meta.broken = true` rather than deleted.
 
+## Auto-patcher pipeline
+
+Packages are generated and updated by deterministic code in `tools/` — **no LLM
+in the update loop**. There are two entry points and two ways they fire.
+
+### The generator (`tools/nur_update.py`)
+
+```
+python3 tools/nur_update.py set --repo <name> --tag <tag>   # one package
+python3 tools/nur_update.py sync-all                        # every org repo -> latest tag
+```
+
+`set` parses the tag (`v1.2.3` → `1.2.3`, major `1`, minor `2`), prefetches the
+source hash with `nix-prefetch-url --unpack`, stamps the version file, and edits
+`default.nix`. It is idempotent and re-runnable. `sync-all` walks every repo in
+the org (via `gh`), resolves each one's latest numeric tag, and updates them all.
+
+Each package owns a version-agnostic recipe at `pkgs/<name>/build.nix`, written
+once when the repo is onboarded and **never overwritten** by the generator. The
+generator only writes the thin, per-version `pkgs/<name>/<major>_<minor>.nix`
+(which passes `version` + `rev` + `hash` into `build.nix`) and the one managed
+line in `default.nix`. Customize a package's real build by editing its
+`build.nix`; the default template is a passthrough that installs the source.
+
+### How it fires
+
+- **On a new tag (event-driven).** A source repo adds the init template
+  `templates/source-repo/on-tag.yml` (→ its `.github/workflows/on-tag.yml`). On
+  every tag push it calls this repo's reusable `notify-nur.yml`, which sends a
+  `package-tagged` `repository_dispatch` to nur-packages. That triggers
+  `update.yml` here, which regenerates the package, verifies it builds, and
+  commits to the default branch.
+- **On a schedule (reconcile).** `sync.yml` runs `sync-all` daily (and on
+  demand) to catch anything a dispatch missed.
+
+```
+source repo (tag push)
+  └─ on-tag.yml ──uses──▶ nur-packages/notify-nur.yml ──dispatch──▶ nur-packages/update.yml
+                                                                      └─ nur_update.py set → build → commit
+nur-packages/sync.yml (cron) ─────────────────────────────────────▶ nur_update.py sync-all → build → commit
+```
+
+### Onboarding a repo
+
+1. Add `templates/source-repo/on-tag.yml` to the repo as
+   `.github/workflows/on-tag.yml`.
+2. Ensure the `NUR_DISPATCH_TOKEN` secret is available to it (an org secret is
+   easiest) and that nur-packages allows its reusable workflows to be called by
+   org repos.
+3. Tag a release — or run the `sync all` / `update package` workflow here
+   manually with the repo + tag. The first run creates `pkgs/<name>/build.nix`;
+   edit it to add the real build and license.
+
 ## Auto-patcher contract with `default.nix`
 
 `default.nix` is the integration point. The auto-patcher manages the lines

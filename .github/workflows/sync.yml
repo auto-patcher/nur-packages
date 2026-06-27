@@ -1,0 +1,66 @@
+name: sync all
+
+# Batch reconciler. Walks every repo in the org, finds each one's latest
+# numeric tag, and brings its package up to that version. Runs on a schedule
+# (a safety net in case a dispatch was missed) and on demand. Deterministic,
+# no LLM. Commits straight to the default branch.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # daily 06:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: sync-all
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      # GITHUB_TOKEN can enumerate public org repos; set the optional ORG_TOKEN
+      # secret (a read-scoped PAT) if private repos must be included too.
+      GH_TOKEN: ${{ secrets.ORG_TOKEN || secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixpkgs-unstable
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - uses: cachix/cachix-action@v15
+        with:
+          name: auto-patcher
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+      - name: Reconcile every package to its latest tag
+        run: |
+          python3 tools/nur_update.py sync-all | tee sync.json
+          rm -f sync.json
+
+      - name: Verify the whole set evaluates and builds
+        run: |
+          nix flake check --show-trace
+          nix build --show-trace --print-build-logs '.#default'
+
+      - name: Commit to the default branch
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "Everything already up to date."; exit 0
+          fi
+          git config user.name  "auto-patcher[bot]"
+          git config user.email "auto-patcher[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "sync: reconcile packages to latest tags"
+          branch="${{ github.event.repository.default_branch }}"
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash origin "$branch" || true
+            git push origin "HEAD:$branch" && exit 0
+            echo "push race, retry $i"; sleep $((i*3))
+          done
+          echo "could not push after retries"; exit 1

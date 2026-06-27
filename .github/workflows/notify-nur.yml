@@ -1,0 +1,38 @@
+name: notify nur-packages
+
+# Reusable workflow that lives in nur-packages and is called BY source repos in
+# the org (see templates/source-repo/on-tag.yml). When a source repo pushes a
+# tag, this fires a `package-tagged` repository_dispatch at nur-packages, which
+# kicks off the update job here to (re)generate and build that repo's package.
+#
+# It runs in the *caller's* context, so the github.* values below refer to the
+# source repo and the tag it just pushed.
+
+on:
+  workflow_call:
+    inputs:
+      owner:
+        description: Org that owns nur-packages
+        type: string
+        default: auto-patcher
+    secrets:
+      dispatch_token:
+        description: Token allowed to POST dispatches to <owner>/nur-packages
+        required: true
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch package-tagged to nur-packages
+        env:
+          GH_TOKEN: ${{ secrets.dispatch_token }}
+          OWNER: ${{ inputs.owner }}
+          REPO: ${{ github.event.repository.name }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          echo "Notifying $OWNER/nur-packages: $REPO tagged $TAG"
+          gh api -X POST "repos/$OWNER/nur-packages/dispatches" \
+            -f event_type=package-tagged \
+            -F "client_payload[repo]=$REPO" \
+            -F "client_payload[tag]=$TAG"
