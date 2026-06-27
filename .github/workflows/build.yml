@@ -1,0 +1,31 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      # Evaluate the flake outputs (packages, overlay, legacyPackages).
+      - name: nix flake check
+        run: nix flake check --show-trace
+
+      # Build the whole set via the flake. `.#default` is a symlinkJoin that
+      # depends on every package, so this compiles them all.
+      - name: nix build (flake)
+        run: nix build --show-trace --print-build-logs '.#default'
+
+      # Build via default.nix too — this is the exact path the NUR community
+      # infra evaluates, so keep it green independently of the flake.
+      - name: nix-build (default.nix, NUR path)
+        run: nix-build --no-out-link
