@@ -77,8 +77,8 @@ default.nix                       # flat namespace consumers see (GENERATED — 
 flake.nix                         # flake wrapper: packages / overlay / legacyPackages
 pkgs/<name>/build.nix             # version-agnostic recipe (written once, never overwritten)
 pkgs/<name>/<major>_<minor>.nix   # generated thin file: version + rev + hash
-pkgs/nur-update/                  # "meta" package: the generator, built with nix
-tools/nur-update/{go.mod,*.go,…}  # the generator's Go source
+pkgs/auto-packager/                  # "meta" package: the generator, built with nix
+tools/auto-packager/{go.mod,*.go,…}  # the generator's Go source
 ```
 
 Every package sets `meta` (description + license, optionally platforms) so it is
@@ -90,28 +90,28 @@ indexed by NUR search. Packages that cannot build are kept with
 The NUR's own tooling is itself packaged and exposed in the namespace as a
 "meta" package, so it is built and verified by CI like everything else:
 
-- `nur-update` — the generator (`nur.repos.auto-patcher.nur-update`,
-  `nix run .#nur-update`). Source: `tools/nur-update/`, built by
-  `pkgs/nur-update/default.nix` via `buildGoModule`.
+- `auto-packager` — the generator (`nur.repos.auto-patcher.auto-packager`,
+  `nix run .#auto-packager`). Source: `tools/auto-packager/`, built by
+  `pkgs/auto-packager/default.nix` via `buildGoModule`.
 
 Meta packages are declared in a small static list in the generator
-(`metaPackages` in `tools/nur-update/generate.go`); everything else in
+(`metaPackages` in `tools/auto-packager/generate.go`); everything else in
 `default.nix` is discovered by scanning `pkgs/`.
 
 ## Auto-patcher pipeline
 
-Packages are generated and updated by `nur-update`, a small Go program that
+Packages are generated and updated by `auto-packager`, a small Go program that
 renders Nix from `text/template` — **no LLM in the update loop**. There are two
 entry points and two ways they fire.
 
-### The generator (`nur-update`)
+### The generator (`auto-packager`)
 
 ```
-nix run .#nur-update -- set --repo <name> --tag <tag>   # one package
-nix run .#nur-update -- sync-all                        # every org repo -> latest tag
-nix run .#nur-update -- regen                           # re-derive default.nix from pkgs/
+nix run .#auto-packager -- set --repo <name> --tag <tag>   # one package
+nix run .#auto-packager -- sync-all                        # every org repo -> latest tag
+nix run .#auto-packager -- regen                           # re-derive default.nix from pkgs/
 
-# or, from source:  cd tools/nur-update && go run . <cmd>
+# or, from source:  cd tools/auto-packager && go run . <cmd>
 ```
 
 `set` parses the tag (`v1.2.3` → `1.2.3`, major `1`, minor `2`), prefetches the
@@ -145,8 +145,8 @@ passthrough that installs the source.
 ```
 source repo (tag push)
   └─ on-tag.yml ──uses──▶ nur-packages/notify-nur.yml ──dispatch──▶ nur-packages/update.yml
-                                                                      └─ nur-update set → build → commit
-nur-packages/sync.yml (cron) ─────────────────────────────────────▶ nur-update sync-all → build → commit
+                                                                      └─ auto-packager set → build → commit
+nur-packages/sync.yml (cron) ─────────────────────────────────────▶ auto-packager sync-all → build → commit
 ```
 
 ### Onboarding a repo
@@ -163,7 +163,7 @@ nur-packages/sync.yml (cron) ─────────────────
 ## Naming & `default.nix` contract
 
 - Attribute names are flat: `<pkg>_<major>_<minor>` (e.g. `foo_1_2`). Meta
-  packages keep their plain name (e.g. `nur-update`).
+  packages keep their plain name (e.g. `auto-packager`).
 - A version's derivation lives at `pkgs/<pkg>/<major>_<minor>.nix` and is a
   `callPackage`-style function. The generator writes it from a template as a
   thin wrapper that calls `pkgs/<pkg>/build.nix` with `version`/`rev`/`hash`.

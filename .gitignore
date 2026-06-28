@@ -4,4 +4,4 @@
 # generator scratch / build output
 /result.json
 /sync.json
-/tools/nur-update/nur-update
+/tools/auto-packager/auto-packager

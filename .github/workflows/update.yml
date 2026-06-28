@@ -49,8 +49,8 @@ jobs:
         id: gen
         run: |
           echo "Updating $REPO -> $TAG"
-          # Dogfood the nix build: run the generator as the nur-update package.
-          nix run --print-build-logs '.#nur-update' -- set --repo "$REPO" --tag "$TAG" | tee result.json
+          # Dogfood the nix build: run the generator as the auto-packager package.
+          nix run --print-build-logs '.#auto-packager' -- set --repo "$REPO" --tag "$TAG" | tee result.json
           echo "attr=$(jq -r .attr result.json)" >> "$GITHUB_OUTPUT"
 
       - name: Verify it evaluates and builds

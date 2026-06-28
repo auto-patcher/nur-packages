@@ -134,7 +134,7 @@ type nixEntry struct {
 // the auto-patcher loop). They live as their own derivations under pkgs/ and
 // show up in the namespace alongside the auto-patched packages.
 var metaPackages = []nixEntry{
-	{Attr: "nur-update", Path: "./pkgs/nur-update"},
+	{Attr: "auto-packager", Path: "./pkgs/auto-packager"},
 }
 
 // scanPackages discovers the auto-patched, versioned packages by walking the

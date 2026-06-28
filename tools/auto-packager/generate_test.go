@@ -62,9 +62,9 @@ func TestSetPackageAndRegen(t *testing.T) {
 	}
 	want := []string{
 		"alpha_3_0 = pkgs.callPackage ./pkgs/alpha/3_0.nix { };",
+		// auto-packager is a static meta package, always present and sorted in.
+		"auto-packager = pkgs.callPackage ./pkgs/auto-packager { };",
 		"hello_1_0 = pkgs.callPackage ./pkgs/hello/1_0.nix { };",
-		// nur-update is a static meta package, always present and sorted in.
-		"nur-update = pkgs.callPackage ./pkgs/nur-update { };",
 		"widget_1_2 = pkgs.callPackage ./pkgs/widget/1_2.nix { };",
 	}
 	if strings.Join(entries, "\n") != strings.Join(want, "\n") {

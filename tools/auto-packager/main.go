@@ -1,11 +1,11 @@
-// Command nur-update deterministically generates and updates the auto-patcher
-// NUR package set from source-repo tags. No LLM in the loop: every Nix file is
-// rendered from a Go text/template, and default.nix is derived by scanning the
-// pkgs/ tree (the filesystem is the source of truth).
+// Command auto-packager deterministically generates and updates the
+// auto-patcher NUR package set from source-repo tags. No LLM in the loop: every
+// Nix file is rendered from a Go text/template, and default.nix is derived by
+// scanning the pkgs/ tree (the filesystem is the source of truth).
 //
-//	nur-update set --repo <name> --tag <tag> [--owner o] [--hash sri]
-//	nur-update sync-all [--owner o] [--self-repo nur-packages]
-//	nur-update regen
+//	auto-packager set --repo <name> --tag <tag> [--owner o] [--hash sri]
+//	auto-packager sync-all [--owner o] [--self-repo nur-packages]
+//	auto-packager regen
 //
 // Paths are taken relative to the repo root, which defaults to the current
 // directory and can be overridden with NUR_REPO_ROOT.
@@ -46,8 +46,8 @@ func main() {
 
 func usage() {
 	fmt.Fprint(os.Stderr, `usage:
-  nur-update set --repo <name> --tag <tag> [--owner o] [--hash sri]
-  nur-update sync-all [--owner o] [--self-repo nur-packages]
-  nur-update regen
+  auto-packager set --repo <name> --tag <tag> [--owner o] [--hash sri]
+  auto-packager sync-all [--owner o] [--self-repo nur-packages]
+  auto-packager regen
 `)
 }
