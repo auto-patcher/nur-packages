@@ -27,6 +27,9 @@ jobs:
           nix_path: nixpkgs=channel:nixpkgs-unstable
           extra_nix_config: |
             experimental-features = nix-command flakes
+            # Authenticate GitHub fetches (nixpkgs resolution) to avoid the
+            # anonymous api.github.com rate limit / 429 throttling.
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
       # Configure the public `auto-patcher` Cachix cache. With CACHIX_AUTH_TOKEN
       # set (repo Actions secret) every path built below is pushed to the cache
