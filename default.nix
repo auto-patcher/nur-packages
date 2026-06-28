@@ -11,6 +11,4 @@
 
 {
   auto-packager = pkgs.callPackage ./pkgs/auto-packager { };
-  hello_1_0 = pkgs.callPackage ./pkgs/hello/1_0.nix { };
-  hello_2_0 = pkgs.callPackage ./pkgs/hello/2_0.nix { };
 }

@@ -174,5 +174,5 @@ nur-packages/sync.yml (cron) ─────────────────
 - Always set `meta.description` and `meta.license`. Mark unbuildable packages
   `meta.broken = true` instead of removing them.
 
-The `hello_1_0` / `hello_2_0` entries are trivial seed examples demonstrating the
-layout and a working build; they can be removed once real packages land.
+Until source repos are onboarded, the only entry is the `auto-packager` meta
+package; the auto-patched packages appear here as repos get tagged.
