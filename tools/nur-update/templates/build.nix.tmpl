@@ -1,25 +1,25 @@
-# Version-agnostic build recipe for @OWNER@/@REPO@.
+# Version-agnostic build recipe for {{.Owner}}/{{.Repo}}.
 #
-# Written ONCE when the repo is onboarded; the auto-patcher never overwrites
-# this file. It only stamps new versions into pkgs/@REPO@/<major>_<minor>.nix,
+# Written ONCE when the repo is onboarded; the generator never overwrites this
+# file. It only stamps new versions into pkgs/{{.Repo}}/<major>_<minor>.nix,
 # which call this with `version` + `rev` + `hash`.
 #
 # Replace the generic passthrough install below with the real build for
-# @REPO@ (buildInputs, buildPhase, ...) and set the correct meta.license.
+# {{.Repo}} (buildInputs, buildPhase, ...) and set the correct meta.license.
 { lib, stdenv, fetchFromGitHub, version, rev, hash }:
 
 stdenv.mkDerivation {
-  pname = "@REPO@";
+  pname = "{{.Repo}}";
   inherit version;
 
   src = fetchFromGitHub {
-    owner = "@OWNER@";
-    repo = "@REPO@";
+    owner = "{{.Owner}}";
+    repo = "{{.Repo}}";
     inherit rev hash;
   };
 
   # Generic passthrough: install the source tree as-is. Replace with the real
-  # build once it is known for @REPO@.
+  # build once it is known for {{.Repo}}.
   dontBuild = true;
   installPhase = ''
     runHook preInstall
@@ -29,8 +29,8 @@ stdenv.mkDerivation {
   '';
 
   meta = {
-    description = "Auto-patched build of @OWNER@/@REPO@ (passthrough until a real recipe is added)";
-    homepage = "https://github.com/@OWNER@/@REPO@";
+    description = "Auto-patched build of {{.Owner}}/{{.Repo}} (passthrough until a real recipe is added)";
+    homepage = "https://github.com/{{.Owner}}/{{.Repo}}";
     # TODO(onboarding): set the real upstream license.
     license = lib.licenses.mit;
     platforms = lib.platforms.all;

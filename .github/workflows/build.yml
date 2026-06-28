@@ -12,8 +12,13 @@ jobs:
       - uses: actions/checkout@v4
 
       # Offline regression tests for the deterministic generator (no nix needed).
+      # The generator is also built by nix below (it is the nur-update package).
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/nur-update/go.mod
       - name: generator tests
-        run: python3 tools/test_nur_update.py
+        working-directory: tools/nur-update
+        run: go test ./...
 
       - uses: cachix/install-nix-action@v27
         with:

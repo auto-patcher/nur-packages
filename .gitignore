@@ -1,4 +1,7 @@
 /result
 /result-*
-__pycache__/
-*.pyc
+
+# generator scratch / build output
+/result.json
+/sync.json
+/tools/nur-update/nur-update

@@ -40,7 +40,8 @@ jobs:
 
       - name: Reconcile every package to its latest tag
         run: |
-          python3 tools/nur_update.py sync-all | tee sync.json
+          # Dogfood the nix build: run the generator as the nur-update package.
+          nix run --print-build-logs '.#nur-update' -- sync-all | tee sync.json
           rm -f sync.json
 
       - name: Verify the whole set evaluates and builds
