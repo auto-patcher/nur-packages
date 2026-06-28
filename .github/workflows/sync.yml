@@ -6,8 +6,8 @@ name: sync all
 # no LLM. Commits straight to the default branch.
 
 # The scheduled reconcile is disabled for now (it would run daily and needs the
-# NUR_DISPATCH_TOKEN secret to enumerate the org). Re-enable by uncommenting the
-# schedule once the token exists; run manually via the Actions tab meanwhile.
+# GitHub App secret/var to enumerate the org). Re-enable by uncommenting the
+# schedule once the App is set up; run manually via the Actions tab meanwhile.
 on:
   # schedule:
   #   - cron: '0 6 * * *'   # daily 06:00 UTC
@@ -23,21 +23,22 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    env:
-      # Enumerate org repos via gh using the shared NUR_DISPATCH_TOKEN PAT
-      # (covers private repos too).
-      GH_TOKEN: ${{ secrets.NUR_DISPATCH_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+
+      # Mint a short-lived GitHub App installation token to enumerate org repos.
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ vars.AUTO_PATCHER_APP_ID }}
+          private-key: ${{ secrets.AUTO_PATCHER_APP_KEY }}
+          owner: auto-patcher
 
       - uses: cachix/install-nix-action@v27
         with:
           nix_path: nixpkgs=channel:nixpkgs-unstable
           extra_nix_config: |
             experimental-features = nix-command flakes
-            # Authenticate GitHub fetches (nixpkgs resolution) to avoid the
-            # anonymous api.github.com rate limit / 429 throttling.
-            access-tokens = github.com=${{ secrets.NUR_DISPATCH_TOKEN }}
 
       - uses: cachix/cachix-action@v15
         with:
@@ -45,6 +46,8 @@ jobs:
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
       - name: Reconcile every package to its latest tag
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           # Dogfood the nix build: run the generator as the auto-packager package.
           nix run --print-build-logs '.#auto-packager' -- sync-all | tee sync.json

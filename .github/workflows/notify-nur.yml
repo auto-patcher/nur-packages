@@ -1,9 +1,9 @@
 name: notify nur-packages
 
 # Reusable workflow that lives in nur-packages and is called BY source repos in
-# the org (see templates/source-repo/on-tag.yml). When a source repo pushes a
-# tag, this fires a `package-tagged` repository_dispatch at nur-packages, which
-# kicks off the update job here to (re)generate and build that repo's package.
+# the org (see templates/source-repo/on-tag.yml). On a source-repo tag push it
+# mints a short-lived GitHub App installation token and fires a `package-tagged`
+# repository_dispatch at nur-packages, which kicks off update.yml there.
 #
 # It runs in the *caller's* context, so the github.* values below refer to the
 # source repo and the tag it just pushed.
@@ -12,21 +12,35 @@ on:
   workflow_call:
     inputs:
       owner:
-        description: Org that owns nur-packages
+        description: Org that owns nur-packages and the App
         type: string
         default: auto-patcher
+      app_id:
+        description: GitHub App ID (the AUTO_PATCHER_APP_ID org variable)
+        type: string
+        required: true
     secrets:
-      dispatch_token:
-        description: Token allowed to POST dispatches to <owner>/nur-packages
+      app_private_key:
+        description: GitHub App private key PEM (the AUTO_PATCHER_APP_KEY org secret)
         required: true
 
 jobs:
   dispatch:
     runs-on: ubuntu-latest
     steps:
+      # Mint a token scoped to just nur-packages with the App's Contents:write,
+      # valid ~1h. Nothing long-lived is stored in the source repo.
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ inputs.app_id }}
+          private-key: ${{ secrets.app_private_key }}
+          owner: ${{ inputs.owner }}
+          repositories: nur-packages
+
       - name: Dispatch package-tagged to nur-packages
         env:
-          GH_TOKEN: ${{ secrets.dispatch_token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           OWNER: ${{ inputs.owner }}
           REPO: ${{ github.event.repository.name }}
           TAG: ${{ github.ref_name }}

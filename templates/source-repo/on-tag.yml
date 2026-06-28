@@ -1,10 +1,13 @@
 # Drop this into a source repo at .github/workflows/on-tag.yml as part of the
-# org init process. It registers the repo with the auto-patcher NUR: on every
-# tag push it asks nur-packages to (re)generate and build that repo's package.
+# org init process. On every tag push it asks nur-packages to (re)generate and
+# build that repo's package, authenticating with a short-lived GitHub App token
+# minted at runtime — no long-lived secret lives in the repo.
 #
-# One-time setup the repo (or the org) needs:
-#   - a secret NUR_DISPATCH_TOKEN that can POST repository dispatches to
-#     auto-patcher/nur-packages (an org secret shared to all repos is easiest);
+# One-time org setup (shared to all repos that publish packages):
+#   - variable AUTO_PATCHER_APP_ID  = the GitHub App's ID
+#   - secret   AUTO_PATCHER_APP_KEY = the GitHub App's private key (PEM)
+#   - the App installed on the org with Contents: read & write, with access to
+#     nur-packages and this repo;
 #   - nur-packages must allow its reusable workflows to be called by org repos
 #     (Settings -> Actions -> "Access").
 #
@@ -21,5 +24,7 @@ on:
 jobs:
   notify:
     uses: auto-patcher/nur-packages/.github/workflows/notify-nur.yml@main
+    with:
+      app_id: ${{ vars.AUTO_PATCHER_APP_ID }}
     secrets:
-      dispatch_token: ${{ secrets.NUR_DISPATCH_TOKEN }}
+      app_private_key: ${{ secrets.AUTO_PATCHER_APP_KEY }}
