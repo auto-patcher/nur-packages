@@ -5,9 +5,12 @@ name: sync all
 # (a safety net in case a dispatch was missed) and on demand. Deterministic,
 # no LLM. Commits straight to the default branch.
 
+# The scheduled reconcile is disabled for now (it would run daily and needs the
+# NUR_DISPATCH_TOKEN secret to enumerate the org). Re-enable by uncommenting the
+# schedule once the token exists; run manually via the Actions tab meanwhile.
 on:
-  schedule:
-    - cron: '0 6 * * *'   # daily 06:00 UTC
+  # schedule:
+  #   - cron: '0 6 * * *'   # daily 06:00 UTC
   workflow_dispatch:
 
 concurrency:
@@ -21,9 +24,9 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     env:
-      # GITHUB_TOKEN can enumerate public org repos; set the optional ORG_TOKEN
-      # secret (a read-scoped PAT) if private repos must be included too.
-      GH_TOKEN: ${{ secrets.ORG_TOKEN || secrets.GITHUB_TOKEN }}
+      # Enumerate org repos via gh using the shared NUR_DISPATCH_TOKEN PAT
+      # (covers private repos too).
+      GH_TOKEN: ${{ secrets.NUR_DISPATCH_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -34,7 +37,7 @@ jobs:
             experimental-features = nix-command flakes
             # Authenticate GitHub fetches (nixpkgs resolution) to avoid the
             # anonymous api.github.com rate limit / 429 throttling.
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            access-tokens = github.com=${{ secrets.NUR_DISPATCH_TOKEN }}
 
       - uses: cachix/cachix-action@v15
         with:

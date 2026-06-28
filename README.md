@@ -153,9 +153,9 @@ nur-packages/sync.yml (cron) ─────────────────
 
 1. Add `templates/source-repo/on-tag.yml` to the repo as
    `.github/workflows/on-tag.yml`.
-2. Ensure the `NUR_DISPATCH_TOKEN` secret is available to it (an org secret is
-   easiest) and that nur-packages allows its reusable workflows to be called by
-   org repos.
+2. Ensure the `NUR_DISPATCH_TOKEN` secret is available to it (an org secret
+   is easiest) and that nur-packages allows its reusable workflows to be called
+   by org repos.
 3. Tag a release — or run the `sync all` / `update package` workflow here
    manually with the repo + tag. The first run creates `pkgs/<name>/build.nix`;
    edit it to add the real build and license.

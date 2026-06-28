@@ -41,7 +41,7 @@ jobs:
             experimental-features = nix-command flakes
             # Authenticate GitHub fetches (nixpkgs resolution) to avoid the
             # anonymous api.github.com rate limit / 429 throttling.
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            access-tokens = github.com=${{ secrets.NUR_DISPATCH_TOKEN }}
 
       - uses: cachix/cachix-action@v15
         with:
