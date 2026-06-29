@@ -11,4 +11,5 @@
 
 {
   auto-packager = pkgs.callPackage ./pkgs/auto-packager { };
+  auto-patcher = pkgs.callPackage ./pkgs/auto-patcher { };
 }

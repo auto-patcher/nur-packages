@@ -1,0 +1,21 @@
+org: auto-patcher
+
+# Number of repos processed simultaneously.
+# Each worker runs a full Claude session — keep this low.
+workers: 3
+
+# How often to re-scan the org for repos that need work.
+scan_interval: 6h
+
+# Minimum pause between a worker finishing one job and starting the next.
+worker_delay: 10m
+
+# Repos in the org to skip.
+exclude:
+  - skills
+
+github:
+  token: ""
+
+anthropic:
+  token: ""
